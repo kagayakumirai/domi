@@ -119,6 +119,42 @@ def scenario_label(cur: Dict[str, float], prev: Optional[Dict[str, float]]) -> s
         return "アルト抜け（リバランス）"
     if total_down and st_up and alt_down:
         return "資金抜け（リスクオフ）"
+        # 追加レジーム（順序が重要：上ほど優先）
+    # 1) 資金抜け（全体退避）
+    if total_down and st_up and alt_down and (not btc_up):   # btc_up条件を緩く抑制
+        return "資金抜け（全体退避）"
+
+    # 2) アルト抜け（リバランス）
+    if (not total_up or total_down) and alt_down and (btc_up or st_up):
+        return "アルト抜け（リバランス）"
+
+    # 3) 広義アルトシーズン（拡散リスクオン）
+    if total_up and alt_up and st_down and btc_down and eth_down:
+        return "広義アルトシーズン"
+
+    # 4) BTC横横でアルト祭り（BTCレンジ＋アルト拡散）
+    # ここでは“BTC.D＝”を「上昇でも下降でもない」として判定
+    btc_flat = (not btc_up) and (not btc_down)
+    if total_up and alt_up and st_down and btc_flat:
+        return "BTC横横でアルト祭り"
+
+    # 5) ETHリード回転
+    if total_up and eth_up and btc_down and st_down:
+        return "ETHリード回転"
+
+    # 6) BTC単独上げ
+    if total_up and btc_up and (not eth_up) and alt_down and st_down:
+        return "BTC単独上げ"
+
+    # 7) ステーブルドレイン点火（待機資金→現物）
+    if (not total_down) and st_down and (btc_up or eth_up or alt_up):
+        return "ステーブルドレイン点火"
+
+    # 8) 偽りの安定（静かな現金化）
+    if (not total_up and not total_down) and st_up and alt_down and (not eth_up):
+        return "偽りの安定"
+
+    # 既存：イケイケ期（Alt循環）等は残してOK（重複するなら上のどれかに統合）
 
     # 補助
     if total_up and btc_up and eth_up:
